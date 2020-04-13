@@ -1109,6 +1109,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     AtlasVertex     vertex     = context.getVertex(guid);
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
                     boolean         hasUpdates = false;
+                    Map<String, Object>    AttributeHistory = null;
 
                     if (!hasUpdates) {
                         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED; // entity status could be updated during import
@@ -1126,6 +1127,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                             if (!attribute.getAttributeType().areEqualValues(currVal, newVal, context.getGuidAssignments())) {
                                 hasUpdates = true;
 
+                                AttributeHistory.put(attribute.getName(), currVal);
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("found attribute update: entity(guid={}, typeName={}), attrName={}, currValue={}, newValue={}", guid, entity.getTypeName(), attribute.getName(), currVal, newVal);
                                 }
@@ -1149,6 +1151,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                             if (!attribute.getAttributeType().areEqualValues(currVal, newVal, context.getGuidAssignments())) {
                                 hasUpdates = true;
 
+                                AttributeHistory.put(attribute.getName(), currVal);
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("found relationship attribute update: entity(guid={}, typeName={}), attrName={}, currValue={}, newValue={}", guid, entity.getTypeName(), attribute.getName(), currVal, newVal);
                                 }
@@ -1193,6 +1196,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                         entitiesToSkipUpdate.add(entity);
                         RequestContext.get().recordEntityToSkip(entity.getGuid());
                     }
+                    entity.setAttrHistories(AttributeHistory);
+
                 }
 
                 if (entitiesToSkipUpdate != null) {

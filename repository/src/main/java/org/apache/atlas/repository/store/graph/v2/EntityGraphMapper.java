@@ -254,7 +254,7 @@ public class EntityGraphMapper {
         }
     }
 
-    public EntityMutationResponse mapAttributesAndClassifications(EntityMutationContext context, final boolean isPartialUpdate, final boolean replaceClassifications, boolean replaceNamespaceAttributes) throws AtlasBaseException {
+    public EntityMutationResponse   mapAttributesAndClassifications(EntityMutationContext context, final boolean isPartialUpdate, final boolean replaceClassifications, boolean replaceNamespaceAttributes) throws AtlasBaseException {
         MetricRecorder metric = RequestContext.get().startMetricRecord("mapAttributesAndClassifications");
 
         EntityMutationResponse resp       = new EntityMutationResponse();
@@ -613,6 +613,8 @@ public class EntityGraphMapper {
         mapAttributes(struct, getStructType(struct.getTypeName()), vertex, op, context);
     }
 
+    // struct -> updatedEntity
+    // mapAttributes(updatedEntity, entityType, vertex, UPDATE, context)
     private void mapAttributes(AtlasStruct struct, AtlasStructType structType, AtlasVertex vertex, EntityOperation op, EntityMutationContext context) throws AtlasBaseException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> mapAttributes({}, {})", op, struct.getTypeName());

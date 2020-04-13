@@ -59,7 +59,7 @@ public interface ActiveStateChangeHandler {
      *
      * Any cleanup that must be carried out by an implementor when the server becomes passive
      * should happen on this callback.
-     *
+     *r
      * @throws {@link AtlasException} if anything is wrong on shutdown
      */
     void instanceIsPassive() throws AtlasException;

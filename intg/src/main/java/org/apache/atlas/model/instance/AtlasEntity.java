@@ -71,6 +71,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
     public static final String KEY_CREATE_TIME     = "createTime";
     public static final String KEY_UPDATE_TIME     = "updateTime";
     public static final String KEY_VERSION         = "version";
+    public static final String ATTR_HISTORY        = "history";
 
     /**
      * Status of the entity - can be active or deleted. Deleted entities are not removed from Atlas store.
@@ -95,6 +96,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
     private Map<String, String>              customAttributes;
     private Map<String, Map<String, Object>> namespaceAttributes;
     private Set<String>                      labels;
+    private Map<Long, Map<String, Object>> attrHistories;
 
     @JsonIgnore
     private static AtomicLong s_nextId = new AtomicLong(System.nanoTime());
@@ -344,6 +346,26 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
 
     public Map<String, String> getCustomAttributes() {
         return customAttributes;
+    }
+
+    public void setAttrHistories(Map<String, Object> lastAttrVersion) {
+        Long v = this.getVersion();
+        if (this.attrHistories.containsKey(v)) {
+            Map<String, Object> temp = this.attrHistories.get(v);
+            for(Map.Entry<String, Object> entry : lastAttrVersion.entrySet()) {
+                temp.put(entry.getKey(), entry.getValue());
+            }
+        } else {
+            this.attrHistories.put(v, lastAttrVersion);
+        }
+    }
+
+    public Map<String, Object> getAttrHistories(Long v) {
+        return this.attrHistories.get(v);
+    }
+
+    public Map<Long, Map<String, Object>> getAttrHistories() {
+        return this.attrHistories;
     }
 
     public void setCustomAttributes(Map<String, String> customAttributes) {
