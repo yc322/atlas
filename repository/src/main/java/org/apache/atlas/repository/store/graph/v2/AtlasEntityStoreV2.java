@@ -64,14 +64,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static java.lang.Boolean.FALSE;
 import static org.apache.atlas.model.instance.EntityMutations.EntityOperation.*;
@@ -94,6 +87,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
 
+    private Map<String, AtlasEntity> EntityHistory ;
+
     @Inject
     public AtlasEntityStoreV2(DeleteHandlerDelegate deleteDelegate, AtlasTypeRegistry typeRegistry,
                               AtlasEntityChangeNotifier entityChangeNotifier, EntityGraphMapper entityGraphMapper) {
@@ -102,6 +97,30 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         this.entityChangeNotifier = entityChangeNotifier;
         this.entityGraphMapper    = entityGraphMapper;
         this.entityRetriever      = new EntityGraphRetriever(typeRegistry);
+        this.EntityHistory        = new HashMap<>();
+    }
+
+    public AtlasEntityWithExtInfo getEntityLatestVersion(String guid) throws AtlasBaseException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("==> getById({})", guid);
+        }
+
+        AtlasEntity.AtlasEntityExtInfo entityExtInfo = new AtlasEntity.AtlasEntityExtInfo();
+        AtlasEntity            entity        =  this.EntityHistory.get(guid);
+        AtlasEntityWithExtInfo ret           = new AtlasEntityWithExtInfo(entity, entityExtInfo);
+
+        ret.compact();
+
+        if (ret == null) {
+            throw new AtlasBaseException(AtlasErrorCode.INSTANCE_GUID_NOT_FOUND, guid);
+        }
+
+//        AtlasAuthorizationUtils.verifyAccess(new AtlasEntityAccessRequest(typeRegistry, AtlasPrivilege.ENTITY_READ, new AtlasEntityHeader(ret.getEntity())), "read entity: guid=", guid);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== getEntityVersionById({}): {}", guid,  ret);
+        }
+        return ret;
     }
 
     @Override
@@ -383,6 +402,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         String      guid   = AtlasGraphUtilsV2.getGuidByUniqueAttributes(entityType, uniqAttributes);
         AtlasEntity entity = updatedEntityInfo.getEntity();
 
+        AtlasEntity en = entityRetriever.toAtlasEntity(guid,false);
+        this.EntityHistory.put(guid, en);
+
         entity.setGuid(guid);
 
         AtlasAuthorizationUtils.verifyAccess(new AtlasEntityAccessRequest(typeRegistry, AtlasPrivilege.ENTITY_UPDATE, new AtlasEntityHeader(entity)), "update entity ByUniqueAttributes");
@@ -437,6 +459,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             default:
                 throw new AtlasBaseException(AtlasErrorCode.ATTRIBUTE_UPDATE_NOT_SUPPORTED, attrName, attrType.getTypeName());
         }
+
+        AtlasEntity en = entityRetriever.toAtlasEntity(guid,false);
+        this.EntityHistory.put(guid, en);
 
         return createOrUpdate(new AtlasEntityStream(updateEntity), true, false, false);
     }
@@ -1135,6 +1160,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                                 break;
                             }
                         }
+//                        entity.setAttrHistories(AttributeHistory);
+//                        entity.updateVersion();
                     }
 
                     if (!hasUpdates && MapUtils.isNotEmpty(entity.getRelationshipAttributes())) { // check of relationsship-attribute value change
@@ -1196,8 +1223,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                         entitiesToSkipUpdate.add(entity);
                         RequestContext.get().recordEntityToSkip(entity.getGuid());
                     }
-                    entity.setAttrHistories(AttributeHistory);
-
                 }
 
                 if (entitiesToSkipUpdate != null) {

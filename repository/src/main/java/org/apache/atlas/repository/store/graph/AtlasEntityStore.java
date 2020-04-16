@@ -83,6 +83,15 @@ public interface AtlasEntityStore {
      */
     AtlasEntitiesWithExtInfo getByIds(List<String> guid) throws AtlasBaseException;
 
+
+    /**
+     * Batch GET to get Entity Latest Version by guid
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    AtlasEntityWithExtInfo getEntityLatestVersion(String guid) throws AtlasBaseException;
+
     /**
      * Batch GET to retrieve entities by their ID
      * @param guid

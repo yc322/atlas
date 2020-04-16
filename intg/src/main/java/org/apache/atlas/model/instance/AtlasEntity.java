@@ -96,7 +96,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
     private Map<String, String>              customAttributes;
     private Map<String, Map<String, Object>> namespaceAttributes;
     private Set<String>                      labels;
-    private Map<Long, Map<String, Object>> attrHistories;
+//    private Map<Long, Map<String, Object>>   attrHistories;
 
     @JsonIgnore
     private static AtomicLong s_nextId = new AtomicLong(System.nanoTime());
@@ -222,6 +222,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
             setCustomAttributes(other.getCustomAttributes());
             setNamespaceAttributes(other.getNamespaceAttributes());
             setLabels(other.getLabels());
+            setAttrHistory(other.getAttrHistories());
         }
     }
 
@@ -313,6 +314,11 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
         this.version = version;
     }
 
+    public void updateVersion() {
+        Long version = getVersion();
+        setVersion(version + 1);
+    }
+
     public Map<String, Object> getRelationshipAttributes() { return relationshipAttributes; }
 
     public void setRelationshipAttributes(Map<String, Object> relationshipAttributes) {
@@ -346,6 +352,10 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
 
     public Map<String, String> getCustomAttributes() {
         return customAttributes;
+    }
+
+    public void setAttrHistory(Map<Long, Map<String, Object>> AttrVersion) {
+        this.attrHistories = AttrVersion;
     }
 
     public void setAttrHistories(Map<String, Object> lastAttrVersion) {

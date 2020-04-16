@@ -22,13 +22,9 @@ import org.apache.atlas.EntityAuditEvent;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.audit.EntityAuditEventV2;
-import org.apache.atlas.model.instance.AtlasClassification;
+import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.instance.AtlasEntityHeaders;
-import org.apache.atlas.model.instance.ClassificationAssociateRequest;
-import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.repository.audit.EntityAuditRepository;
 import org.apache.atlas.repository.store.graph.v2.ClassificationAssociator;
@@ -86,7 +82,6 @@ public class EntityREST {
     public static final String PREFIX_ATTR  = "attr:";
     public static final String PREFIX_ATTR_ = "attr_";
 
-
     private final AtlasTypeRegistry      typeRegistry;
     private final AtlasEntityStore       entitiesStore;
     private final EntityAuditRepository  auditRepository;
@@ -120,6 +115,30 @@ public class EntityREST {
             }
 
             return entitiesStore.getById(guid, minExtInfo, ignoreRelationships);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * Fetch complete definition of an entity given its GUID.
+     * @param guid GUID for the entity
+     * @return AtlasEntity
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/guid/{guid}/version")
+    public AtlasEntityWithExtInfo getLatestVersionById(@PathParam("guid") String guid, @QueryParam("minExtInfo") @DefaultValue("false") boolean minExtInfo, @QueryParam("ignoreRelationships") @DefaultValue("false") boolean ignoreRelationships) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "EntityREST.getLatestVersionById(" + guid + ", " + minExtInfo + " )");
+            }
+
+            return entitiesStore.getEntityLatestVersion(guid);
         } finally {
             AtlasPerfTracer.log(perf);
         }
